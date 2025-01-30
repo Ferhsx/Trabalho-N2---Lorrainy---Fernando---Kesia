@@ -104,8 +104,10 @@ server.patch('/filmes/:id', async(request, reply) => {
     const filme = database.update(filmeId, filmeAtu);
     reply.status(200).send(filme);
 
+    }catch (error){
+        console.log("Erro no patch /filmes/:id:", error);
+        return reply.status(500).send({ error: "Erro ao atualizar filme" });
     }
-    
    
 });
 
