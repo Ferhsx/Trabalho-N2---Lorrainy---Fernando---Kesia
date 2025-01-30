@@ -1,0 +1,46 @@
+### Listar filmes
+GET http://localhost:3000/filmes
+
+### Criar um novo filme
+POST http://localhost:3000/filmes
+Content-Type: application/json
+
+{
+  "titulo": "Bob Marley - Rebel Music",
+  "diretor": "Kevin Macdonald",
+  "genero": "Documentário",
+  "ano": 2012,
+  "duracao": 144,
+  "classificacao": 16
+}
+
+### Atualizar um filme
+PUT http://localhost:3000/filmes/370e7abf-f647-49da-8d8b-222af237fc35
+Content-Type: application/json
+
+{
+  "id": 1,
+  "titulo": "Ainda estou aqui",
+  "diretor": "Casey Affleck",
+  "genero": "Drama",
+  "ano": 2010,
+  "duracao": 118,
+  "classificacao": 16
+}
+
+### Atualizar parcialmente um filme
+PATCH http://localhost:3000/filmes/ac165a2b-8ae3-4003-8860-ea3bd31dac18
+Content-Type: application/json
+
+{
+  "duracao": 108
+}
+
+
+### Deletar um filme
+DELETE http://localhost:3000/filmes/ac165a2b-8ae3-4003-8860-ea3bd31dac18
+Content-Type: application/json
+
+{
+  "id": 1
+}
