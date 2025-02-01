@@ -1,31 +1,35 @@
 // importar fastify
 import fastify from "fastify";
-// importar DatabaseMemoria
-import { DatabaseMemoria } from "./database-memoria.js";
-//importar bando de daddos
-
+// importar dotenv
 import dotenv from "dotenv";
 dotenv.config();
-
-const http = require("http");
-const { neon } = require("@neondatabase/serverless");
-
-const sql = neon(process.env.DATABASE_URL);
-
-const requestHandler = async (req, res) => {
-    const result = await sql`SELECT version()`;
-    const { version } = result[0];
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end(version);
-};
+// importar neon
+import { neon } from "@neondatabase/serverless";
 
 // criando o server
 const server = fastify();
+const sql = neon(process.env.DATABASE_URL);
 
-// criando a instância do banco de dados
-const database = new DatabaseMemoria();
+// função para criar tabela
+async function createTable() {
+    await sql`
+        CREATE TABLE IF NOT EXISTS filmes(
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        titulo TEXT NOT NULL,
+        diretor TEXT NOT NULL,
+        genero TEXT NOT NULL,
+        ano INTEGER NOT NULL,
+        duracao INTEGER NOT NULL,
+        classificacao INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+        )
+    `;
+}
 
-// vendo filme
+// chamar a função para criar tabela
+createTable().catch(console.error);
+
+// rotas filme
 server.get('/filmes', async (request, reply) => {
     try {
         const { search } = request.query;
@@ -36,13 +40,11 @@ server.get('/filmes', async (request, reply) => {
         }
 
         const result = await query;
-        return result;
+        reply.send(result);
     } catch (error) {
-        console.log(error);
+        console.log("Erro no get /filmes", error);
         reply.status(500).send({ error: "Erro ao buscar filmes" });
     }
-    const filmes = database.list(search);
-    reply.send(filmes);
 });
 
 // criar filme
@@ -55,17 +57,16 @@ server.post('/filmes', async (request, reply) => {
         VALUES (${titulo}, ${diretor}, ${genero}, ${ano}, ${duracao}, ${classificacao})
         `;
         
-        return reply.status(201).send();
-
+        reply.status(201).send();
     } catch (error) {
-        console.log("Erro no post /songs:", error);
-    return reply.status(500).send({ error: "Erro ao criar filme" });
+        console.log("Erro no post /filmes:", error);
+        reply.status(500).send({ error: "Erro ao criar filme" });
     }
-    });
+});
 
 // atualizar filme
-server.put('/filmes/:id', (request, reply) => {
-    try{
+server.put('/filmes/:id', async (request, reply) => {
+    try {
         const { id } = request.params;
         const { titulo, diretor, genero, ano, duracao, classificacao } = request.body;
         
@@ -80,49 +81,74 @@ server.put('/filmes/:id', (request, reply) => {
             classificacao = ${classificacao}
         WHERE id = ${id}
         `;
-        return reply.status(204).send();
-    }catch (error) {
+        reply.status(204).send();
+    } catch (error) {
         console.log("Erro no put /filmes/:id:", error);
-        return reply.status(500).send({ error: "Erro ao atualizar filme" });
+        reply.status(500).send({ error: "Erro ao atualizar filme" });
     }
 });
 
-//metodo patch
-server.patch('/filmes/:id', async(request, reply) => {
-    try{
-        const filmeId = request.params.id; //id do filme
-    const filmeEx = database.filmes.get(filmeId); //filme a ser atualizado
-    if (!filmeEx) {
-        return reply.status(404).send({ error: "Filme não encontrado" });
-    }
+// método patch
+server.patch('/filmes/:id', async (request, reply) => {
+    try {
+        const filmeId = request.params.id; // id do filme
+        const filmeAtu = request.body; // campos a serem atualizados
 
-    const filmeAtu = {
-        ...filmeEx,
-        ...request.body,
-    }; 
-    
-    const filme = database.update(filmeId, filmeAtu);
-    reply.status(200).send(filme);
+        if (!filmeAtu || Object.keys(filmeAtu).length === 0) {
+            return reply.status(404).send({ error: "Filme não encontrado" });
+        }
 
-    }catch (error){
+        const setClause = [];
+        const Atu = [];
+        let param = 1;
+
+        for (const [key, value] of Object.entries(filmeAtu)) {
+            setClause.push(`${key} = $${param}`);
+            Atu.push(value);
+            param++;
+        }
+
+
+        await sql(`
+            UPDATE filmes
+            SET ${setClause.join(", ")}
+            WHERE id = $${param}
+            `,[...Atu, filmeId]);
+
+        reply.status(204).send();
+    } catch (error) {
         console.log("Erro no patch /filmes/:id:", error);
-        return reply.status(500).send({ error: "Erro ao atualizar filme" });
+        reply.status(500).send({ error: "Erro ao atualizar filme" });
     }
-   
 });
 
 // deletar filme
-server.delete('/filmes/:id', (request, reply) => {
+server.delete('/filmes/:id', async (request, reply) => {
     const { id } = request.params;
     try {
-        database.delete(id);
-        reply.status(200).send();
+        const result = await sql`
+        DELETE FROM filmes
+        WHERE id = ${id}
+        RETURNING *
+        `;
+
+        if (result.length === 0) {
+            return reply.status(404).send({ error: "Filme não encontrado" });
+        }
+        reply.status(200).send("Filme deletado com sucesso");
     } catch (error) {
         reply.status(404).send({ error: error.message });
     }
 });
 
 // iniciar o servidor
-http.createServer(requestHandler).listen(3000, () => {
-    console.log("Server running at http://localhost:3000");
+server.listen({
+    port: 3333,
+    host: "0.0.0.0",
+}, (err) => {
+    if (err) {
+        console.error(err);
+        process.exit(1);
+    }
+    console.log(`Servidor rodando em http://localhost:3333`);
 });
