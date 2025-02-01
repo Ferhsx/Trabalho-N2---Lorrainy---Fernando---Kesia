@@ -1,8 +1,8 @@
 ### Listar filmes
-GET http://localhost:3000/filmes
+GET http://localhost:3333/filmes
 
 ### Criar um novo filme
-POST http://localhost:3000/filmes
+POST http://localhost:3333/filmes
 Content-Type: application/json
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 }
 
 ### Atualizar um filme
-PUT http://localhost:3000/filmes/370e7abf-f647-49da-8d8b-222af237fc35
+PUT http://localhost:3333/filmes/b17ba471-fcec-4abb-b91e-1877e688b0e9
 Content-Type: application/json
 
 {
@@ -29,7 +29,7 @@ Content-Type: application/json
 }
 
 ### Atualizar parcialmente um filme
-PATCH http://localhost:3000/filmes/ac165a2b-8ae3-4003-8860-ea3bd31dac18
+PATCH http://localhost:3333/filmes/dc427767-2164-4333-9878-7fba2a7d25d8
 Content-Type: application/json
 
 {
@@ -38,7 +38,7 @@ Content-Type: application/json
 
 
 ### Deletar um filme
-DELETE http://localhost:3000/filmes/ac165a2b-8ae3-4003-8860-ea3bd31dac18
+DELETE http://localhost:3333/filmes/ac165a2b-8ae3-4003-8860-ea3bd31dac18
 Content-Type: application/json
 
 {
