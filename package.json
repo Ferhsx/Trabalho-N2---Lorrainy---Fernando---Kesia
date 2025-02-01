@@ -9,7 +9,7 @@
   },
   "type": "module",
   "keywords": [],
-  "author": "",
+  "author": "ferhsx/kurebo/kesia",
   "license": "ISC",
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

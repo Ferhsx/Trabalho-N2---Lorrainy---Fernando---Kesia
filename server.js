@@ -93,32 +93,29 @@ server.patch('/filmes/:id', async (request, reply) => {
     try {
         const filmeId = request.params.id; // id do filme
         const filmeAtu = request.body; // campos a serem atualizados
+
         if (!filmeAtu || Object.keys(filmeAtu).length === 0) {
             return reply.status(404).send({ error: "Filme não encontrado" });
         }
 
-        const podeAtu = ["titulo", "diretor", "genero", "ano", "duracao", "classificacao"];
-        const Atu = {};
+        const setClause = [];
+        const Atu = [];
+        let param = 1;
 
         for (const [key, value] of Object.entries(filmeAtu)) {
-            if (podeAtu.includes(key)) {
-                Atu[key] = value;
-            }
-        }
-        if (Object.keys(Atu).length === 0) {
-            return reply.status(400).send({ error: "Campos inválidos" });
+            setClause.push(`${key} = $${param}`);
+            Atu.push(value);
+            param++;
         }
 
-        const setClause = Object.entries(Atu)
-            .map(([key, value]) => `${key} = ${sql(value)}`)
-            .join(", ");
 
-        const query = `UPDATE filmes SET ' + ${setClause} + 'WHERE id = ${filmeId}' RETURNING *`;
-        const filmeEx = await sql.unsafe(query);
-        if (filmeEx.length === 0) {
-            return reply.status(404).send({ error: "Filme não encontrado" });
-        }
-        reply.status(200).send(filmeEx[0]);
+        await sql(`
+            UPDATE filmes
+            SET ${setClause.join(", ")}
+            WHERE id = $${param}
+            `,[...Atu, filmeId]);
+
+        reply.status(204).send();
     } catch (error) {
         console.log("Erro no patch /filmes/:id:", error);
         reply.status(500).send({ error: "Erro ao atualizar filme" });
